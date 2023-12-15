@@ -1,2 +1,2 @@
-# ecommerce
-ecommerce with payment
+# e-commerce
+e-commerce with payment
