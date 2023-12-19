@@ -5,7 +5,7 @@ import datetime
 import json
 
 from .models import Customer, Order, OrderItem, Product, ShippingAddress
-from .utils import cartData
+from .utils import cookieCart, cartData, guestOrder
 
 
 def store(request):
@@ -70,26 +70,26 @@ def processOrder(request):
     if request.user.is_authenticated:
         customer = request.user.customer
         order, created = Order.objects.get_or_create(customer=customer, complete=False)
-        total = data["form"]["total"]
-        order.transaction_id = transaction_id
-
-        print(total)
-        print(order.get_cart_total)
-        if float(total) == float(order.get_cart_total):
-            print("Both is equal")
-            order.complete = True
-        order.save()
-
-        if order.shipping == True:
-            ShippingAddress.objects.create(
-                customer=customer,
-                order=order,
-                address=data["shipping"]["address"],
-                city=data["shipping"]["city"],
-                state=data["shipping"]["state"],
-                zipcode=data["shipping"]["zipcode"],
-            )
 
     else:
-        print("User has not log in..")
+        customer, order = guestOrder(request, data)
+
+    total = data["form"]["total"]
+    order.transaction_id = transaction_id
+
+    if float(total) == float(order.get_cart_total):
+        print("Both is equal")
+        order.complete = True
+    order.save()
+
+    if order.shipping == True:
+        ShippingAddress.objects.create(
+            customer=customer,
+            order=order,
+            address=data["shipping"]["address"],
+            city=data["shipping"]["city"],
+            state=data["shipping"]["state"],
+            zipcode=data["shipping"]["zipcode"],
+        )
+
     return JsonResponse("Payment completed!", safe=False)
