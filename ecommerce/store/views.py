@@ -5,6 +5,7 @@ import datetime
 import json
 
 from .models import Customer, Order, OrderItem, Product, ShippingAddress
+from .utils import cookieCart
 
 
 def store(request):
@@ -14,9 +15,8 @@ def store(request):
         items = order.orderitem_set.all()
         cartItems = order.get_cart_items
     else:
-        items = []
-        order = {"get_cart_total": 0, "get_cart_items": 0, "shipping": False}
-        cartItems = order["get_cart_items"]
+        cookieData = cookieCart(request)
+        cartItems = cookieData["cartItems"]
 
     products = Product.objects.all()
     context = {"products": products, "cartItems": cartItems}
@@ -30,35 +30,10 @@ def cart(request):
         items = order.orderitem_set.all()
         cartItems = order.get_cart_items
     else:
-        try:
-            cart = json.loads(request.COOKIES["cart"])
-        except:
-            cart = {}
-        print("Cart:", cart)
-        items = []
-        order = {"get_cart_total": 0, "get_cart_items": 0, "shipping": False}
-        cartItems = order["get_cart_items"]
-
-        for i in cart:
-            cartItems += cart[i]["quantity"]
-
-            product = Product.objects.get(id=i)
-            total = product.price * cart[i]["quantity"]
-
-            order["get_cart_total"] += total
-            order["get_cart_items"] += cart[i]["quantity"]
-
-            item = {
-                "product": {
-                    "id": product.id,
-                    "name": product.name,
-                    "price": product.price,
-                    "imageURL": product.imageURL,
-                },
-                "quantity": cart[i]["quantity"],
-                "get_total": total,
-            }
-            items.append(item)
+        cookieData = cookieCart(request)
+        cartItems = cookieData["cartItems"]
+        order = cookieData["order"]
+        items = cookieData["items"]
 
     context = {"items": items, "order": order, "cartItems": cartItems}
     return render(request, "store/cart.html", context)
@@ -71,9 +46,10 @@ def checkout(request):
         items = order.orderitem_set.all()
         cartItems = order.get_cart_items
     else:
-        items = []
-        order = {"get_cart_total": 0, "get_cart_items": 0, "shipping": False}
-        cartItems = order["get_cart_items"]
+        cookieData = cookieCart(request)
+        cartItems = cookieData["cartItems"]
+        order = cookieData["order"]
+        items = cookieData["items"]
 
     context = {"items": items, "order": order, "cartItems": cartItems}
     return render(request, "store/checkout.html", context)
