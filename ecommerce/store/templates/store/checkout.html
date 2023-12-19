@@ -61,13 +61,13 @@
 			<div class="cart-row">
 				<div style="flex: 2;"><img src="{{item.product.imageURL}}" alt="" class="row-image"></div>
 				<div style="flex: 2;">{{item.product.name}}</div>
-				<div style="flex: 1;">${{item.product.price|floatformat:2}}</div>
+				<div style="flex: 1;">${{item.product.price}}</div>
 				<div style="flex: 1;">x{{item.quantity}}</p></div>
 			</div>	
 			{% endfor %}
 				
 			<h5>Items: {{order.get_cart_items}}</h5>
-			<h5>Total: ${{order.get_cart_total|floatformat:2|intcomma}}</h5>
+			<h5>Total: ${{order.get_cart_total}}</h5>
 		</div>
 	</div>
 </div>

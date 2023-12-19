@@ -30,9 +30,35 @@ def cart(request):
         items = order.orderitem_set.all()
         cartItems = order.get_cart_items
     else:
+        try:
+            cart = json.loads(request.COOKIES["cart"])
+        except:
+            cart = {}
+        print("Cart:", cart)
         items = []
         order = {"get_cart_total": 0, "get_cart_items": 0, "shipping": False}
         cartItems = order["get_cart_items"]
+
+        for i in cart:
+            cartItems += cart[i]["quantity"]
+
+            product = Product.objects.get(id=i)
+            total = product.price * cart[i]["quantity"]
+
+            order["get_cart_total"] += total
+            order["get_cart_items"] += cart[i]["quantity"]
+
+            item = {
+                "product": {
+                    "id": product.id,
+                    "name": product.name,
+                    "price": product.price,
+                    "imageURL": product.imageURL,
+                },
+                "quantity": cart[i]["quantity"],
+                "get_total": total,
+            }
+            items.append(item)
 
     context = {"items": items, "order": order, "cartItems": cartItems}
     return render(request, "store/cart.html", context)
@@ -86,11 +112,14 @@ def processOrder(request):
     if request.user.is_authenticated:
         customer = request.user.customer
         order, created = Order.objects.get_or_create(customer=customer, complete=False)
-        total = float(data["form"]["total"])
+        total = data["form"]["total"]
         order.transaction_id = transaction_id
 
-        # if total == order.get_cart_total():
-        order.complete = True
+        print(total)
+        print(order.get_cart_total)
+        if float(total) == float(order.get_cart_total):
+            print("Both is equal")
+            order.complete = True
         order.save()
 
         if order.shipping == True:
@@ -104,5 +133,5 @@ def processOrder(request):
             )
 
     else:
-        print("Usr has not log in..")
+        print("User has not log in..")
     return JsonResponse("Payment completed!", safe=False)
